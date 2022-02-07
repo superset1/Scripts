@@ -5,9 +5,10 @@
 
 # Enter your values here
   t=3600 # Waiting time between checks in seconds
+  remoteuser="ubuntu"
   dbname="testhosts"
   dbuser="vitaly"
-  dbpassword="123"
+  dbpassword="$sqlpass" # sqlpass is my env var
 # Enter your values here
 
 mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "INSERT IGNORE INTO iperf3 (host_name) SELECT host_name FROM hostlist;" # Insert unique host list
@@ -15,12 +16,16 @@ mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "INSERT IGNORE INTO iperf3 (ho
 for i in `mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "SELECT host_name FROM iperf3;" -B --skip-column-names`; do  # Getting a list of hosts from iperf3 table
   speedtest="" # Reset variable
   lastdate=`mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "SELECT date_system FROM iperf3 WHERE host_name='$i';" -B --skip-column-names` # Getting the last access timestamp
-  
+
     if [[ $(( $(date +%s) - $lastdate )) -gt $t ]] ; then # If the time since the last check is more than $t, then do a check
           mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "UPDATE iperf3 SET date_check=NOW() WHERE host_name='$i';" # Access date and time update
 
       if ping -c 4 $i; then # If host is reachable
             mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "UPDATE iperf3 SET status='Available' WHERE host_name='$i';" # Update available status
+            ssh ubuntu@$i 'iperf3 -s -D -1' || \
+              (ssh ubuntu@$i 'sudo apt install -y iperf3' && \
+              ssh ubuntu@$i 'iperf3 -s -D -1') # Run iperf3 server on a remote host or install and run
+            sleep 1
             speedtest=$(iperf3 -c $i | awk '/sender/ {print $7, $8}') # Run iperf3 command
         if [[ $speedtest ]]; then # If var is not empty
               mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "UPDATE iperf3 SET speed='$speedtest' WHERE host_name='$i';" # Update speed

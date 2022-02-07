@@ -13,7 +13,8 @@ done < <(find /home/ -maxdepth 2 -name ".bashrc")
 ### Editor nano to all user
 
 ### Timezone Kaliningrad
-sudo ln -sf /usr/share/zoneinfo/Europe/Kaliningrad /etc/localtime 
+#sudo ln -sf /usr/share/zoneinfo/Europe/Kaliningrad /etc/localtime 
+sudo timedatectl set-timezone Europe/Kaliningrad
 ### Timezone Kaliningrad
 
 ### Default shell for a new user
@@ -89,8 +90,11 @@ service network-manager restart
 if ! [[ `apt list --installed | grep postgres` ]]; then
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-###apt-get update
+#apt-get update
 apt-get -y install postgresql
+sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/14/main/postgresql.conf
+sed -i '/host    all.*32/ {s/127.*\/32/0.0.0.0\/0/; s/scr.*256/password/}' /etc/postgresql/14/main/pg_hba.conf
+systemctl restart postgresql
 fi
 ### Postgresql
 
@@ -105,23 +109,31 @@ wget https://repo.zabbix.com/zabbix/5.4/ubuntu/pool/main/z/zabbix-release/zabbix
 dpkg -i zabbix-release_5.4-1+ubuntu20.04_all.deb
 apt update
 
-apt install -y zabbix-server-mysql
+apt install -y zabbix-server-pgsql
+apt install -y php7.4-pgsql
+# apt install -y zabbix-server-mysql
 apt install -y zabbix-frontend-php
 # apt install -y zabbix-apache-conf
 apt install -y zabbix-nginx-conf
 apt install -y zabbix-sql-scripts
 apt install -y zabbix-agent
 
-mysql -uroot -p"root" -e "create database zabbix character set utf8 collate utf8_bin;"
-mysql -uroot -p"root" -e "create user zabbix@localhost identified by 'zabbix';"
-mysql -uroot -p"root" -e "grant all privileges on zabbix.* to zabbix@localhost;"
-mysql -uroot -p"root" -e "FLUSH PRIVILEGES;"
-zcat /usr/share/doc/zabbix-sql-scripts/mysql/create.sql.gz | mysql -uzabbix -p"zabbix" zabbix
+sudo -u postgres createuser --pwprompt zabbix
+sudo -u postgres createdb -O zabbix zabbix
+sudo -u postgres psql -c "ALTER USER zabbix with PASSWORD 'zabbix';"
 
-sed -i 's/^### DBPassword=.*$/DBPassword=zabbix/' /etc/zabbix/zabbix_server.conf
-sed -i -e 's/^###//g' -e '/listen *80/s/80/8888/' -e 's/example.com/myzabbix/' /etc/zabbix/nginx.conf
+# mysql -uroot -p"root" -e "create database zabbix character set utf8 collate utf8_bin;"
+# mysql -uroot -p"root" -e "create user zabbix@localhost identified by 'zabbix';"
+# mysql -uroot -p"root" -e "grant all privileges on zabbix.* to zabbix@localhost;"
+# mysql -uroot -p"root" -e "FLUSH PRIVILEGES;"
 
-systemctl restart zabbix-server zabbix-agent nginx php7.4-fpm apache2
-systemctl enable zabbix-server zabbix-agent nginx php7.4-fpm apache2
+zcat /usr/share/doc/zabbix-sql-scripts/postgresql/create.sql.gz | sudo -u zabbix psql zabbix
+# zcat /usr/share/doc/zabbix-sql-scripts/mysql/create.sql.gz | mysql -uzabbix -p"zabbix" zabbix
+
+sed -i 's/^# DBPassword=.*$/DBPassword=zabbix/' /etc/zabbix/zabbix_server.conf
+sed -i -e 's/^#//g' -e '/listen *80/s/80/8888/' -e 's/example.com/myzabbix/' /etc/zabbix/nginx.conf
+
+systemctl restart zabbix-server zabbix-agent nginx php7.4-fpm # apache2
+systemctl enable zabbix-server zabbix-agent nginx php7.4-fpm # apache2
 fi
 ### Zabbix

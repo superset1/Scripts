@@ -58,9 +58,10 @@ sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
         lxc network attach lxnet c$i $interface
         lxc config device set c$i $interface ipv4.address 10.10.20.1$i
         lxc start c$i
-        sleep 5
+        sleep 7
 #        echo -e "1\n1\n" | lxc exec c$i -- passwd ubuntu
 #        lxc exec c$i -- sed -i 's/*PasswordAuthentication*$/PasswordAuthentication no/' /etc/ssh/sshd_config
+        lxc exec c$i -- timedatectl set-timezone Europe/Kaliningrad
         lxc exec c$i -- sed -i 's/#PubkeyAuthentication.*$/PubkeyAuthentication yes/' /etc/ssh/sshd_config
         lxc exec c$i -- service ssh restart || service sshd restart
         lxc file push /home/vitaly/.ssh/id_rsa.pub c$i/home/ubuntu/.ssh/authorized_keys
