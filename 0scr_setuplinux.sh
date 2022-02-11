@@ -45,6 +45,7 @@ apt install -y openssh-server
 apt install -y net-tools
 apt install -y iperf
 apt install -y iptables-persistent
+apt install -y curl
 ### Istall pakages
 
 ### Ansible
