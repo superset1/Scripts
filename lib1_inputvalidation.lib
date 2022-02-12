@@ -1,0 +1,19 @@
+# Input validation function
+
+function validinput {
+  while : ; do
+  
+    read -n1 -p "$1" answer
+
+      if [[ "$answer" =~ [$2] ]]; then
+            echo -e; $3; echo; break
+       elif [[ "$answer" =~ [$4] ]]; then
+            echo -e "\n$5"; $6; break
+       else
+            echo -e "\a\nYou pressed the wrong key!"; echo
+      fi   
+  
+  done
+}
+
+# Input validation function
