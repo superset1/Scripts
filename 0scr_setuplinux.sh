@@ -2,6 +2,13 @@
 
 ### Test server configuration
 
+### Some variables
+echo 'alias a="cd /home/vitaly/Code/Ansible"' >> /home/vitaly/.bashrc
+echo 'alias b="cd /home/vitaly/Code/Bashscripts"' >> /home/vitaly/.bashrc
+echo 'alias s="cd /home/vitaly/Code/SQL"' >> /home/vitaly/.bashrc
+echo "StrictHostKeyChecking accept-new" >> config
+### Some variables
+
 ### Don't ask admins for password with sudo
 sed -i 's/sudo.*ALL$/sudo   ALL=(ALL:ALL\) NOPASSWD:ALL/' /etc/sudoers
 ### Don't ask admins for password with sudo
@@ -34,7 +41,7 @@ gsettings set org.gnome.desktop.screensaver lock-enabled false
 apt update # Update index packages
 echo "y" | apt upgrade # Update installed packages 
 
-snap install lxd || apt install -y lxd
+snap install -y lxd || apt install -y lxd
 apt install -y tree
 apt install -y htop
 apt install -y mc
@@ -43,7 +50,7 @@ apt install -y git
 apt install -y lvm2
 apt install -y openssh-server
 apt install -y net-tools
-apt install -y iperf
+apt install -y iperf3
 apt install -y iptables-persistent
 apt install -y curl
 ### Istall pakages
@@ -52,14 +59,26 @@ apt install -y curl
 apt install -y software-properties-common
 add-apt-repository --yes --update ppa:ansible/ansible
 apt install -y ansible
+apt install -y python3-pip
 apt install -y python-pip # Package manager for Python packages
 pip install "pywinrm>=0.3.0" # Ansible for Windows
 ### Ansible
 
+### Jenkins
+apt install -y openjdk-11-jre-headless
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+apt-get update
+apt-get install -y jenkins
+### Jenkins
+
 ### Iptables settings
 interface=`ip -o link | awk -F": " '$2 ~ /^ens|^eth/ {print $2; exit; }'`
-sysctl -q -w net.ipv4.ip_forward=1 ### Enaple NAT
-sed -i 's/###net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
+sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 iptables -F # Reset rules
 iptables --table nat --append POSTROUTING --out-interface $interface -j MASQUERADE  ### NAT rule
 # iptables -A INPUT -p tcp --dport ssh -s 192.168.1.0/24 -j ACCEPT
@@ -71,20 +90,21 @@ service network-manager restart
 ### Iptables settings
 
 ### Network settings for netplan
-#echo "### Let NetworkManager manage all devices on this system
-#network:
-#  version: 2
+echo "# Let NetworkManager manage all devices on this system
+network:
+  version: 2
 #  renderer: NetworkManager
-#  renderer: networkd
-#  ethernets:
-#   ens33:
-#    dhcp4: yes
-#    addresses: [ 192.168.1.101/24 ]
-#    gateway4: 192.168.1.1
-#    nameservers:
-#     addresses: [ 192.168.1.1, 8.8.8.8 ]
-#"> /etc/netplan/01-network-manager-all.yaml
-#netplan apply
+  renderer: networkd
+  ethernets:
+   $interface:
+    dhcp4: no
+    addresses: [ 192.168.1.131/24 ]
+    gateway4: 192.168.1.1
+    nameservers:
+     addresses: [ 192.168.1.1, 8.8.8.8 ]
+"> /etc/netplan/01-network-manager-all.yaml
+netplan generate
+netplan apply
 ### Network settings for netplan
 
 ### Postgresql
@@ -93,8 +113,9 @@ sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 #apt-get update
 apt-get -y install postgresql
-sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/14/main/postgresql.conf
-sed -i '/host    all.*32/ {s/127.*\/32/0.0.0.0\/0/; s/scr.*256/password/}' /etc/postgresql/14/main/pg_hba.conf
+sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf
+sed -i '/host    all.*32/ {s/127.*\/32/0.0.0.0\/0/; s/scr.*256/password/}' /etc/postgresql/*/main/pg_hba.conf
+sudo -u postgres psql -c "create user vitaly with password '123' createdb;"
 systemctl restart postgresql
 fi
 ### Postgresql
@@ -102,6 +123,16 @@ fi
 ### Mysql
 apt install -y mysql-server
 apt install -y mysql-client
+echo "export sqlpass=123" >> /home/vitaly/.bashrc
+echo "[client]
+user=vitaly
+password=123
+" > /home/vitaly/.my.cnf
+mysql -e "CREATE USER 'vitaly'@'%' IDENTIFIED BY '123';"
+mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'vitaly'@'%';"
+mysql -e "FLUSH PRIVILEGES;"
+sed -i '/^bind-address/s/127.*1/0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
+systemctl restart mysql
 ### Mysql
 
 ### Zabbix
@@ -129,6 +160,7 @@ sudo -u postgres psql -c "ALTER USER zabbix with PASSWORD 'zabbix';"
 # mysql -uroot -p"root" -e "FLUSH PRIVILEGES;"
 
 zcat /usr/share/doc/zabbix-sql-scripts/postgresql/create.sql.gz | sudo -u zabbix psql zabbix
+
 # zcat /usr/share/doc/zabbix-sql-scripts/mysql/create.sql.gz | mysql -uzabbix -p"zabbix" zabbix
 
 sed -i 's/^# DBPassword=.*$/DBPassword=zabbix/' /etc/zabbix/zabbix_server.conf
@@ -138,3 +170,7 @@ systemctl restart zabbix-server zabbix-agent nginx php7.4-fpm # apache2
 systemctl enable zabbix-server zabbix-agent nginx php7.4-fpm # apache2
 fi
 ### Zabbix
+
+### Add language
+dpkg-reconfigure locales
+### Add language

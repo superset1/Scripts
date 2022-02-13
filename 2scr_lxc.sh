@@ -39,7 +39,7 @@ sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 ### Configuration containers
 if [[ "$answer" -gt 0 ]]; then
       for ((i=$c_exists+1; i<=$answer+$c_exists; i++)); do
-            lxc init ubuntu:18.04 c$i
+            lxc init ubuntu:20.04 c$i
             [[ `ip a | grep lxnet` ]] || lxc network create lxnet ipv4.address=10.10.20.1/24 ipv6.address=none ipv4.nat=false ipv6.nat=false ipv4.firewall=false ipv6.firewall=false
             lxc network attach lxnet c$i $interface
             lxc config device set c$i $interface ipv4.address 10.10.20.1$i
@@ -47,10 +47,13 @@ if [[ "$answer" -gt 0 ]]; then
             sleep 7
 #            echo -e "1\n1\n" | lxc exec c$i -- passwd ubuntu
 #            lxc exec c$i -- sed -i 's/*PasswordAuthentication*$/PasswordAuthentication no/' /etc/ssh/sshd_config
-            lxc exec c$i -- timedatectl set-timezone Europe/Kaliningrad
             lxc exec c$i -- sed -i 's/#PubkeyAuthentication.*$/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-            lxc exec c$i -- service ssh restart || service sshd restart
+            lxc exec c$i -- timedatectl set-timezone Europe/Kaliningrad
             lxc file push /home/vitaly/.ssh/id_rsa.pub c$i/home/ubuntu/.ssh/authorized_keys
+            cat /var/lib/jenkins/.ssh/id_rsa.pub  | ssh ubuntu@$i "cat >> /home/ubuntu/.ssh/authorized_keys"
+            lxc exec c$i -- service ssh restart || service sshd restart
+            lxc exec c$i -- apt update &> /dev/null &
+            lxc exec c$i -- apt install -y openjdk-11-jre-headless &> /dev/null &
             echo -e "lxc container c$i created\n"
       done
 service network-manager restart
@@ -61,12 +64,15 @@ fi
 
 ### LXC delete
 echo
-validinput "How many containers delete? " "1-9" "" "0" "Ok, bye...\n" "exit"
-
+while : ; do
+  validinput "How many containers delete? " "1-9" "" "0" "Ok, bye...\n" "exit"
+  [[ $answer > $c_exists ]] && echo -e "You have $c_exists containers only!\n" || break
+done
   for ((i=$c_exists; i>$c_exists-$answer; i--)); do
         lxc stop c$i
         lxc delete c$i
-        echo -e "Container $i has been removed!"
+        ssh-keygen -f "/home/vitaly/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
+        echo -e "Container № $i has been removed!"
   done
 lxc ls
 ### LXC delete

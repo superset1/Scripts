@@ -17,7 +17,7 @@ for remotehost in `mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "SELECT hos
   speedtest="" # Reset variable
   lastdate=`mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "SELECT date_system FROM iperf3 WHERE host_name='$remotehost';" -B --skip-column-names` # Getting the last access timestamp
 
-    if [[ $(( $(date +%s) - $lastdate )) -gt $t ]] ; then # If the time since the last check is more than $t, then do a check
+    if [[ $(( $(date +%s) - $lastdate )) -gt $timer ]] ; then # If the time since the last check is more than $timer, then do a check
           mysql -u"$dbuser" -p"$dbpassword" -D "$dbname" -e "UPDATE iperf3 SET date_check=NOW() WHERE host_name='$remotehost';" # Access date and time update
 
       if ping -c 4 $remotehost; then # If host is reachable
