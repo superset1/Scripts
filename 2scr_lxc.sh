@@ -50,10 +50,8 @@ if [[ "$answer" -gt 0 ]]; then
             lxc exec c$i -- sed -i 's/#PubkeyAuthentication.*$/PubkeyAuthentication yes/' /etc/ssh/sshd_config
             lxc exec c$i -- timedatectl set-timezone Europe/Kaliningrad
             lxc file push /home/vitaly/.ssh/id_rsa.pub c$i/home/ubuntu/.ssh/authorized_keys
-            cat /var/lib/jenkins/.ssh/id_rsa.pub  | ssh ubuntu@$i "cat >> /home/ubuntu/.ssh/authorized_keys"
+            cat /var/lib/jenkins/.ssh/id_rsa.pub  | ssh -i /home/vitaly/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@10.10.20.1$i "cat >> /home/ubuntu/.ssh/authorized_keys" &> /dev/null
             lxc exec c$i -- service ssh restart || service sshd restart
-            lxc exec c$i -- apt update &> /dev/null &
-            lxc exec c$i -- apt install -y openjdk-11-jre-headless &> /dev/null &
             echo -e "lxc container c$i created\n"
       done
 service network-manager restart
@@ -71,7 +69,9 @@ done
   for ((i=$c_exists; i>$c_exists-$answer; i--)); do
         lxc stop c$i
         lxc delete c$i
+        ssh-keygen -f "/root/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
         ssh-keygen -f "/home/vitaly/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
+        ssh-keygen -f "/var/lib/jenkins/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
         echo -e "Container № $i has been removed!"
   done
 lxc ls

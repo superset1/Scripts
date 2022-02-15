@@ -6,6 +6,7 @@
 echo 'alias a="cd /home/vitaly/Code/Ansible"' >> /home/vitaly/.bashrc
 echo 'alias b="cd /home/vitaly/Code/Bashscripts"' >> /home/vitaly/.bashrc
 echo 'alias s="cd /home/vitaly/Code/SQL"' >> /home/vitaly/.bashrc
+echo 'alias c="clear"' >> /home/vitaly/.bashrc
 echo "StrictHostKeyChecking accept-new" >> config
 ### Some variables
 
