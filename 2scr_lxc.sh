@@ -23,14 +23,10 @@ validinput "How many containers create? " "1-9" "" "0" "Ok"
 
 ### Iptables settings for NAT
 interface=`ip -o link | awk -F": " '$2 ~ /^ens|^eth/ {print $2; exit; }'`
-sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
-sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
   if ! grep -q MASQUERADE /etc/iptables/rules.v4; then
-#       iptables -F # Reset rules
+       sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
+       sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
        iptables --table nat --append POSTROUTING --out-interface $interface -j MASQUERADE  # NAT rule
-#       iptables -A INPUT -p tcp --dport ssh -s 192.168.1.0/24 -j ACCEPT
-#       iptables -A INPUT -p tcp --dport ssh -s 10.10.0.0/16 -j ACCEPT
-#       iptables -A INPUT -p tcp --dport ssh -j DROP
        mkdir -p /etc/iptables
        iptables-save > /etc/iptables/rules.v4
   fi
@@ -53,8 +49,12 @@ if [[ "$answer" -gt 0 ]]; then
             cat /var/lib/jenkins/.ssh/id_rsa.pub  | ssh -i /home/vitaly/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@10.10.20.1$i "cat >> /home/ubuntu/.ssh/authorized_keys" &> /dev/null
             lxc exec c$i -- service ssh restart || service sshd restart
             echo -e "lxc container c$i created\n"
+            iptables -t nat -A PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 800$i -j DNAT --to-destination 10.10.20.1${i}:80
+            # iptables -t nat -A POSTROUTING -p tcp --sport 80 --dst 10.10.20.1$i -j SNAT --to-source 192.168.1.131:800$i
+            iptables-save > /etc/iptables/rules.v4
       done
 service network-manager restart
+ansible-playbook ../Ansible/pb3_lxc_apt_install.yml
 lxc ls
 exit
 fi
@@ -73,6 +73,8 @@ done
         ssh-keygen -f "/home/vitaly/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
         ssh-keygen -f "/var/lib/jenkins/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
         echo -e "Container № $i has been removed!"
+        iptables -t nat -D PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 800$i -j DNAT --to-destination 10.10.20.1${i}:80
+        iptables-save > /etc/iptables/rules.v4
   done
 lxc ls
 ### LXC delete

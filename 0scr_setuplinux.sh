@@ -3,11 +3,15 @@
 ### Test server configuration
 
 ### Some variables
-echo 'alias a="cd /home/vitaly/Code/Ansible"' >> /home/vitaly/.bashrc
-echo 'alias b="cd /home/vitaly/Code/Bashscripts"' >> /home/vitaly/.bashrc
-echo 'alias s="cd /home/vitaly/Code/SQL"' >> /home/vitaly/.bashrc
-echo 'alias c="clear"' >> /home/vitaly/.bashrc
-echo "StrictHostKeyChecking accept-new" >> config
+echo 'alias a="cd /home/vitaly/Code/Ansible"
+alias b="cd /home/vitaly/Code/Bashscripts"
+alias j="cd /home/vitaly/Code/Jenkins"
+alias s="cd /home/vitaly/Code/SQL"
+alias c="clear"
+alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
+export JENKINS_USER_ID=vitaly
+export JENKINS_API_TOKEN=' >> /home/vitaly/.bashrc
+echo "StrictHostKeyChecking accept-new" >> /home/vitaly/.ssh/config
 ### Some variables
 
 ### Don't ask admins for password with sudo
@@ -54,6 +58,7 @@ apt install -y net-tools
 apt install -y iperf3
 apt install -y iptables-persistent
 apt install -y curl
+apt install -y apt-transport-https
 ### Istall pakages
 
 ### Ansible
@@ -81,10 +86,11 @@ interface=`ip -o link | awk -F": " '$2 ~ /^ens|^eth/ {print $2; exit; }'`
 sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
 sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 iptables -F # Reset rules
-iptables --table nat --append POSTROUTING --out-interface $interface -j MASQUERADE  ### NAT rule
+iptables -t nat -A POSTROUTING -o $interface -j MASQUERADE  ### NAT rule
 # iptables -A INPUT -p tcp --dport ssh -s 192.168.1.0/24 -j ACCEPT
 # iptables -A INPUT -p tcp --dport ssh -s 10.10.0.0/16 -j ACCEPT
 # iptables -A INPUT -p tcp --dport ssh -j DROP
+# iptables -A FORWARD -i ens33 -o ens38 -j ACCEPT
 mkdir -p /etc/iptables
 iptables-save > /etc/iptables/rules.v4
 service network-manager restart
