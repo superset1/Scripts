@@ -5,6 +5,7 @@
 ### Some variables
 echo 'alias a="cd /home/vitaly/Code/Ansible"
 alias b="cd /home/vitaly/Code/Bashscripts"
+alias d="cd /home/vitaly/Code/Docker"
 alias j="cd /home/vitaly/Code/Jenkins"
 alias s="cd /home/vitaly/Code/SQL"
 alias c="clear"
@@ -53,6 +54,7 @@ apt install -y mc
 apt install -y mlocate
 apt install -y git
 apt install -y lvm2
+apt install -y samba
 apt install -y openssh-server
 apt install -y net-tools
 apt install -y iperf3
@@ -83,8 +85,9 @@ apt-get install -y jenkins
 
 ### Iptables settings
 interface=`ip -o link | awk -F": " '$2 ~ /^ens|^eth/ {print $2; exit; }'`
-sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
+# sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
 sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sudo sysctl -p
 iptables -F # Reset rules
 iptables -t nat -A POSTROUTING -o $interface -j MASQUERADE  ### NAT rule
 # iptables -A INPUT -p tcp --dport ssh -s 192.168.1.0/24 -j ACCEPT
