@@ -7,6 +7,7 @@ echo 'alias a="cd /home/vitaly/Code/Ansible"
 alias b="cd /home/vitaly/Code/Bashscripts"
 alias d="cd /home/vitaly/Code/Docker"
 alias j="cd /home/vitaly/Code/Jenkins"
+alias k="cd /home/vitaly/Code/Kubernetes"
 alias s="cd /home/vitaly/Code/SQL"
 alias c="clear"
 alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
@@ -51,6 +52,7 @@ snap install -y lxd || apt install -y lxd
 apt install -y tree
 apt install -y htop
 apt install -y mc
+apt install -y ncdu
 apt install -y mlocate
 apt install -y git
 apt install -y lvm2
