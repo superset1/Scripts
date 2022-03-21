@@ -60,7 +60,7 @@ apt install -y samba
 apt install -y openssh-server
 apt install -y net-tools
 apt install -y iperf3
-apt install -y iptables-persistent
+# apt install -y iptables-persistent
 apt install -y curl
 apt install -y apt-transport-https
 ### Istall pakages
@@ -100,6 +100,29 @@ mkdir -p /etc/iptables
 iptables-save > /etc/iptables/rules.v4
 service network-manager restart
 ### Iptables settings
+
+# Iptables restore service
+if ! [[ -f /etc/systemd/system/iptables_restore.service ]]; then
+      touch /etc/systemd/system/iptables_restore.service
+      chmod 664 /etc/systemd/system/iptables_restore.service
+      cat <<EOF > /etc/systemd/system/iptables_restore.service
+[Unit]
+Description=Iptables restore after reboot
+After=network.target docker.service
+#After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/sbin/iptables-restore /etc/iptables/rules.v4
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      systemctl enable iptables_restore.service
+      # systemctl start iptables_restore.service
+fi
+# Iptables restore service
 
 ### Network settings for netplan
 echo "# Let NetworkManager manage all devices on this system
