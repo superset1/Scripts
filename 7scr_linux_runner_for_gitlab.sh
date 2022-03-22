@@ -42,7 +42,9 @@ if [[ "$SSL" != [123] ]]; then
              echo "You must select the correct type of encryption!"
              exit
         fi
- elif [[ "$SSL" == 3 ]]; then
+fi
+
+if [[ "$SSL" == 3 ]]; then
       PROTOCOL="http"
       PORT=80
 fi
