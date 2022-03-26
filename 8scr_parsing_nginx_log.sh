@@ -5,6 +5,7 @@
 
 request_timer=120
 unblock_timer=600
+request_counter=10
 
 # Adding tracking logs for the iptables
 if ! [[ -f /etc/rsyslog.d/iptables.conf ]]; then
@@ -39,7 +40,7 @@ iptables_ip=$(iptables -S | grep -oE "INPUT.*--dports 80,443 -j DROP" | awk '{pr
 nginx_log_ip=$(echo "$nginx_log_2m"| awk '{print $1}' | sort)
 # Blocking IP addresses in the iptable if there are more than 10 requests in the last 2 minutes
 for nginx_log_ip_uniq in $(echo "$nginx_log_ip" | uniq); do
-     if [[ $(grep -c "$nginx_log_ip_uniq" <<< "$nginx_log_ip") -gt 10 ]] && [[ "$iptables_ip" != *"$nginx_log_ip_uniq"* ]]; then
+     if [[ $(grep -c "$nginx_log_ip_uniq" <<< "$nginx_log_ip") -gt "$request_counter" ]] && [[ "$iptables_ip" != *"$nginx_log_ip_uniq"* ]]; then
            iptables -I INPUT -p tcp -m multiport --dport 80,443 -s $nginx_log_ip_uniq -j DROP
            iptables -I INPUT -p tcp -m multiport --dport 80,443 -s $nginx_log_ip_uniq -m limit --limit 6/min -j LOG --log-prefix "Iptables: Block ip scan: "          
      fi
