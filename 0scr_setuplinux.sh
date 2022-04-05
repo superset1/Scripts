@@ -1,9 +1,11 @@
 #!/bin/bash
 
 ### Test server configuration
+set -euo pipefail
 
 ### Some variables
-echo 'alias a="cd /home/vitaly/Code/Ansible"
+cat <<EOF >> /home/vitaly/.bashrc
+alias a="cd /home/vitaly/Code/Ansible"
 alias b="cd /home/vitaly/Code/Bashscripts"
 alias d="cd /home/vitaly/Code/Docker"
 alias j="cd /home/vitaly/Code/Jenkins"
@@ -11,8 +13,24 @@ alias k="cd /home/vitaly/Code/Kubernetes"
 alias s="cd /home/vitaly/Code/SQL"
 alias c="clear"
 alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
+alias sn="sudo shutdown now"
+alias sr="sudo shutdown -r now"
 export JENKINS_USER_ID=vitaly
-export JENKINS_API_TOKEN=' >> /home/vitaly/.bashrc
+export JENKINS_API_TOKEN=
+
+# History
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+HISTSIZE=50000
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1) HISTSIZE=1000
+HISTFILESIZE=50000
+# append to the history file, don't overwrite it
+shopt -s histappend
+PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+# History
+
+EOF
 echo "StrictHostKeyChecking accept-new" >> /home/vitaly/.ssh/config
 ### Some variables
 
@@ -48,7 +66,7 @@ gsettings set org.gnome.desktop.screensaver lock-enabled false
 apt update # Update index packages
 echo "y" | apt upgrade # Update installed packages 
 
-snap install -y lxd || apt install -y lxd
+pt install -y shellcheck
 apt install -y tree
 apt install -y htop
 apt install -y mc
@@ -62,8 +80,53 @@ apt install -y net-tools
 apt install -y iperf3
 # apt install -y iptables-persistent
 apt install -y curl
+apt install -y jq
 apt install -y apt-transport-https
+snap install -y lxd || apt install -y lxd
 ### Istall pakages
+
+### VirtualBox 6.1
+sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list'
+wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+apt-get update
+apt-get install -y virtualbox-6.1
+### VirtualBox 6.1
+
+### Docker
+apt-get remove -y docker docker-engine docker.io containerd runc
+apt-get install -y ca-certificates curl gnupg lsb-release
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io
+### Docker
+
+### Kubernetes
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 \
+  && chmod +x minikube
+mkdir -p /usr/local/bin/
+mv ./minikube /usr/local/bin/
+apt install -y conntrack
+
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl \
+  && chmod +x kubectl
+mv ./kubectl /usr/local/bin/kubectl
+kubectl completion bash >/etc/bash_completion.d/kubectl
+
+cat <<EOF >> /home/vitaly/.bashrc
+# Kubernetes
+source <(kubectl completion bash)
+alias k="kubectl"
+alias kcgc="kubectl config get-contexts"
+alias kcuc="kubectl config use-context"
+alias kg="kubectl get"
+alias kgp="kubectl get pods"
+alias kgs="kubectl get services"
+complete -F __start_kubectl k
+# Kubernetes
+EOF
+### Kubernetes
 
 ### Ansible
 apt install -y software-properties-common
@@ -72,6 +135,7 @@ apt install -y ansible
 apt install -y python3-pip
 apt install -y python-pip # Package manager for Python packages
 pip install "pywinrm>=0.3.0" # Ansible for Windows
+pip install virtualenv
 ### Ansible
 
 ### Jenkins
@@ -169,6 +233,22 @@ mysql -e "FLUSH PRIVILEGES;"
 sed -i '/^bind-address/s/127.*1/0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
 systemctl restart mysql
 ### Mysql
+
+### MongoDB
+curl -fsSL https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+apt update
+apt install -y mongodb-org
+systemctl start mongod.service
+systemctl enable mongod
+mongo --eval 'db.runCommand({ connectionStatus: 1 })' # Testing mongodb: 
+### MongoDB
+
+## Redis
+apt install -y redis-server 
+sed -i 's/supervised no/supervised systemd/' /etc/redis/redis.conf 
+systemctl restart redis.service
+## Redis
 
 ### Zabbix
 if ! [[ `apt list --installed | grep zabbix` ]]; then
