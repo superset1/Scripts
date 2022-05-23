@@ -1,21 +1,23 @@
 #!/bin/bash
 
-### Creating containers for CentOS 7
+### Creating containers for Ubuntu
 ### Author Vitaly Kargin
 
 # Include input validation function
 source lib1_inputvalidation.lib # Returns $answer
 # Include input validation function
 
+set -euo pipefail
+
 # Variables
-obraz='superset1/unutnu/21.04' # obraz='images:alpine/3.15/cloud'
+obraz=$(lxc image ls -c l -f csv | grep superset) || obraz='images:ubuntu/21.10' # obraz='images:alpine/3.15/cloud'
 server_interface=`ip -o link | awk -F": " '$2 ~ /^ens|^eth/ {print $2; exit; }'`
 container_interface="eth0"
 c_exists=`lxc ls | grep -c "CONTAINER"` # Number of existing containers
 # Variables
 
 # LXD initial configuration
-if [[ $1 == "init" ]]; then
+if [[ ${1:-} == "init" ]]; then
       echo
       validinput "Do you want to configure the LXD? [y/n] " "yY" "" "nN" "Ok"
       if [[ $answer == [yY] ]]; then
@@ -102,9 +104,9 @@ validinput "How many containers create? " "1-9" "" "0" "Ok"
 if ! grep -q MASQUERADE /etc/iptables/rules.v4; then
       sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
       sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-      iptables --table nat --append POSTROUTING --out-interface $server_interface -j MASQUERADE  # NAT rule
+      sudo iptables --table nat --append POSTROUTING --out-interface $server_interface -j MASQUERADE  # NAT rule
       mkdir -p /etc/iptables
-      iptables-save > /etc/iptables/rules.v4
+      sudo iptables-save > /etc/iptables/rules.v4
 fi
 ### Iptables settings for NAT
 
@@ -119,20 +121,21 @@ if [[ "$answer" -gt 0 ]]; then
             sleep 7
 #            echo -e "1\n1\n" | lxc exec c$i -- passwd ubuntu
 #            lxc exec c$i -- sed -i 's/*PasswordAuthentication*$/PasswordAuthentication no/' /etc/ssh/sshd_config
+            lxc exec c$i -- apt install -y openssh-server
             lxc exec c$i -- sed -i 's/#PubkeyAuthentication.*$/PubkeyAuthentication yes/' /etc/ssh/sshd_config
             lxc exec c$i -- timedatectl set-timezone Europe/Kaliningrad
-            lxc file push /$USER/.ssh/id_rsa.pub c$i/root/.ssh/authorized_keys
-            [[ -f /var/lib/jenkins/.ssh/id_rsa.pub ]] && cat /var/lib/jenkins/.ssh/id_rsa.pub  | ssh -i /home/vitaly/.ssh/id_rsa -o StrictHostKeyChecking=no root@10.10.20.1$i "cat >> /root/.ssh/authorized_keys" &> /dev/null
+            cat /home/$USER/.ssh/id_ed25519.pub | lxc exec c$i -- bash -c 'mkdir /root/.ssh; cat >> /root/.ssh/authorized_keys'
+            # [[ -f /var/lib/jenkins/.ssh/id_rsa.pub ]] && cat /var/lib/jenkins/.ssh/id_rsa.pub  | lxc exec c$i -- bash -c 'mkdir /root/.ssh; cat >> /root/.ssh/authorized_keys' &> /dev/null
             lxc exec c$i -- systemctl restart sshd
             echo -e "lxc container c$i created\n"
-            echo "10.10.20.1$i c$i" >> /etc/hosts
-            iptables -t nat -A PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 801$i -j DNAT --to-destination 10.10.20.1${i}:80
-            iptables -t nat -A PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 201$i -j DNAT --to-destination 10.10.20.1${i}:22
+            sudo bash -c "echo 10.10.20.1$i c$i >> /etc/hosts"
+            sudo iptables -t nat -A PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 801$i -j DNAT --to-destination 10.10.20.1${i}:80
+            sudo iptables -t nat -A PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 201$i -j DNAT --to-destination 10.10.20.1${i}:22
             # iptables -t nat -A POSTROUTING -p tcp --sport 80 --dst 10.10.20.1$i -j SNAT --to-source 192.168.1.131:800$i
       done
 # service network-manager restart
-iptables-save > /etc/iptables/rules.v4
-ansible-playbook ../Ansible/pb3_lxc_apt_install.yml
+sudo bash -c 'iptables-save > /etc/iptables/rules.v4'
+# ansible-playbook ../Ansible/pb3_lxc_apt_install.yml
 lxc ls
 exit
 fi
@@ -147,15 +150,15 @@ done
   for ((i=$c_exists; i>$c_exists-$answer; i--)); do
         lxc stop c$i
         lxc delete c$i
-        ssh-keygen -f "/root/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
-        ssh-keygen -f "/$USER/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
-        ssh-keygen -f "/var/lib/jenkins/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
-        sed -i "/10.10.20.1$i/d" /var/snap/lxd/common/lxd/networks/lxnet/dnsmasq.leases
-        sed -i "/10.10.20.1$i/d" /etc/hosts
+        # ssh-keygen -f "/root/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
+        ssh-keygen -f "/home/$USER/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
+        # ssh-keygen -f "/var/lib/jenkins/.ssh/known_hosts" -R "10.10.20.1$i" &> /dev/null
+        sudo sed -i "/10.10.20.1$i/d" /var/snap/lxd/common/lxd/networks/lxnet/dnsmasq.leases
+        sudo sed -i "/10.10.20.1$i/d" /etc/hosts
         echo -e "Container № $i has been removed!"
-        iptables -t nat -D PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 801$i -j DNAT --to-destination 10.10.20.1${i}:80
-        iptables -t nat -D PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 201$i -j DNAT --to-destination 10.10.20.1${i}:22
-        iptables-save > /etc/iptables/rules.v4
+        sudo iptables -t nat -D PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 801$i -j DNAT --to-destination 10.10.20.1${i}:80
+        sudo iptables -t nat -D PREROUTING -d 192.168.1.131 -p tcp -m tcp --dport 201$i -j DNAT --to-destination 10.10.20.1${i}:22
+        sudo bash -c 'iptables-save > /etc/iptables/rules.v4'
   done
 lxc ls
 ### LXC delete

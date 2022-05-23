@@ -1,7 +1,7 @@
 #/bin/bash
 
 # Input validation function
-
+set +u
 function validinput {
   while : ; do
   
@@ -9,11 +9,11 @@ function validinput {
 
       case $answer in
         [$2]) echo -e; $3; echo; break;;
-        [$4]) echo -e "\n$5"; $6; break;;
+        [$4]) echo -e "\n$5"; ${6:-}; break;;
            *) echo -e "\a\nYou pressed the wrong key!"; echo;;
       esac
 
   done
 }
-
+set -u
 # Input validation function
