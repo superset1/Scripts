@@ -23,16 +23,44 @@ export JENKINS_USER_ID=vitaly
 export JENKINS_API_TOKEN=
 # My aliases
 
+# Git
+alias ga="git add ."
+alias gb="git branch"
+alias gbd="git branch -d"
+alias gbr="git branch -r"
+alias gc="git add .; git commit -a"
+alias gca="git add .; git commit --amend"
+alias gch="git checkout"
+alias gchb="git checkout -b"
+alias gcl="git clone"
+alias gi="git init"
+alias gl="git log"
+alias gp="git push"
+alias gpd="git push origin -d"
+alias gpf="git push -f"
+alias gpu="git pull"
+alias gr="git restore"
+alias gs="git status"
+alias gt="git tag"
+alias gta="git tag -a"
+alias gtd="git tag -d"
+alias gtp="git push origin --tags"
+# Git
+
 # Kubernetes
 source <(kubectl completion bash)
 alias k="kubectl"
+alias kcac="~/WB/Git/kargin.vitaliy/scripts/kubernetes_add_context_from_vault.sh"
 alias kcgc="kubectl config get-contexts"
 alias kcuc="kubectl config use-context"
+alias kd="kubectl describe"
+alias kdp="kubectl describe pod/"
 alias kg="kubectl get"
 alias kgd="kubectl get deploy"
-alias kgp="kubectl get pods"
+alias kgp="kubectl get pods -o wide"
 alias kgs="kubectl get secret"
 alias kgsv="kubectl get services"
+alias kl="kubectl logs"
 complete -F __start_kubectl k
 # Kubernetes
 
@@ -40,6 +68,7 @@ complete -F __start_kubectl k
 alias hl="helm list -a"
 alias hh="helm history"
 alias hr="helm rollback"
+alias hu="~/WB/Git/kargin.vitaliy/scripts/helm_uninstall.sh"
 # Helm
 
 # WB
@@ -189,6 +218,7 @@ kubectl completion bash >/etc/bash_completion.d/kubectl
 add-apt-repository ppa:ansible/ansible
 apt update
 apt-get install -y ansible
+apt install -y ansible-lint
 ### Ansible
 
 ### Jenkins
