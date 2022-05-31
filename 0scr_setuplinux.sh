@@ -106,6 +106,12 @@ user root
 EOF
 ### SSH Config
 
+### Crontab
+cat <<EOF | crontab -
+0 10 * * * cp -r ~/.kube/config ~/WB/Config/.kube/
+EOF
+### Crontab
+
 ### Git Config
 [[ $(grep "Vitaly Kargin" ~/.gitconfig) ]] || cat <<EOF > ~/.gitconfig
 [user]
@@ -141,7 +147,7 @@ apt update # Update index packages
 # echo "y" | apt upgrade # Update installed packages 
 
 apt install -y python3.9 python-setuptools python3-pip
-pip install requests hvac paramiko molecule ansible-core ansible-lint molecule[docker] molecule-vagrant
+pip install --upgrade requests python-gitlab hvac paramiko molecule ansible-core ansible-lint molecule-docker molecule-vagrant
 
 apt install -y shellcheck
 apt install -y htop
