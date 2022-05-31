@@ -4,8 +4,7 @@
 set -euo pipefail
 
 ### Bashrc
-if ! [[ $(grep "My aliases" ~/.bashrc ) ]]; then
-cat <<EOF >> ~/.bashrc
+[[ $(grep "My aliases" ~/.bashrc ) ]] || cat <<EOF >> ~/.bashrc
 # My aliases
 alias a="cd ~/Code/Ansible"
 alias ap="ansible-playbook"
@@ -98,7 +97,6 @@ shopt -s histappend
 PROMPT_COMMAND="history -a; history -c; history -r"
 # History
 EOF
-fi
 ### Bashrc
 
 ### SSH Config
@@ -107,6 +105,14 @@ StrictHostKeyChecking accept-new
 user root
 EOF
 ### SSH Config
+
+### Git Config
+[[ $(grep "Vitaly Kargin" ~/.gitconfig) ]] || cat <<EOF > ~/.gitconfig
+[user]
+	name = Vitaly Kargin
+	email = super_set@mail.ru
+EOF
+### Git Config
 
 ### Don't ask admins for password with sudo
 sed -i 's/sudo.*ALL$/sudo   ALL=(ALL:ALL\) NOPASSWD:ALL/' /etc/sudoers
