@@ -3,18 +3,19 @@
 ### Test server configuration
 set -euo pipefail
 
-### Some variables
-cat <<EOF >> /home/vitaly/.bashrc
+### Bashrc
+if ! [[ $(grep "My aliases" ~/.bashrc ) ]]; then
+cat <<EOF >> ~/.bashrc
 # My aliases
 alias a="cd ~/Code/Ansible"
+alias ap="ansible-playbook"
 alias b="cd ~/Code/Bashscripts"
+alias c="clear"
 alias d="cd ~/Code/Docker"
 alias j="cd ~/Code/Jenkins"
+alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
 alias k="cd ~/Code/Kubernetes"
 alias s="cd ~/Code/SQL"
-alias c="clear"
-alias ap="ansible-playbook"
-alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
 alias sn="sudo shutdown now"
 alias sr="sudo shutdown -r now"
 alias rand="openssl rand -base64 32"
@@ -28,17 +29,18 @@ alias ga="git add ."
 alias gb="git branch"
 alias gbd="git branch -d"
 alias gbr="git branch -r"
-alias gc="git add .; git commit -a"
+alias gd="git diff"
+alias gc="git add .; git commit"
 alias gca="git add .; git commit --amend"
-alias gch="git checkout"
-alias gchb="git checkout -b"
+alias gc="git checkout"
+alias gcb="git checkout -b"
 alias gcl="git clone"
 alias gi="git init"
 alias gl="git log"
 alias gp="git push"
 alias gpd="git push origin -d"
 alias gpf="git push -f"
-alias gpu="git pull"
+alias gpl="git pull"
 alias gr="git restore"
 alias gs="git status"
 alias gt="git tag"
@@ -82,7 +84,6 @@ export VAULT_ADDR=""
 export VAULT_TOKEN=""
 export WB_GIT_TOKEN_READ=""
 export WB_GITLAB_TOKEN_READ=""
-
 # WB
 
 # History
@@ -97,19 +98,19 @@ shopt -s histappend
 PROMPT_COMMAND="history -a; history -c; history -r"
 # History
 EOF
-echo "StrictHostKeyChecking accept-new" >> /home/vitaly/.ssh/config
-echo "user root" >> /home/vitaly/.ssh/config
-### Some variables
+fi
+### Bashrc
+
+### SSH Config
+cat <<EOF >> ~/.ssh/config
+StrictHostKeyChecking accept-new
+user root
+EOF
+### SSH Config
 
 ### Don't ask admins for password with sudo
 sed -i 's/sudo.*ALL$/sudo   ALL=(ALL:ALL\) NOPASSWD:ALL/' /etc/sudoers
 ### Don't ask admins for password with sudo
-
-### Editor nano to all user
-while read myeditor ; do
-[[ ! `grep "export EDITOR=nano" $myeditor` ]] && [[ `echo -e "\nexport EDITOR=nano" >> $myeditor` ]]
-done < <(find /home/ -maxdepth 2 -name ".bashrc")
-### Editor nano to all user
 
 ### Timezone Kaliningrad
 #sudo ln -sf /usr/share/zoneinfo/Europe/Kaliningrad /etc/localtime 
@@ -133,9 +134,8 @@ gsettings set org.gnome.desktop.screensaver lock-enabled false
 apt update # Update index packages
 # echo "y" | apt upgrade # Update installed packages 
 
-apt install -y python 3.9
-apt install -y python-setuptools
-pip install hvac 
+apt install -y python3.9 python-setuptools python3-pip
+pip install requests hvac paramiko molecule ansible-core ansible-lint molecule[docker] molecule-vagrant
 
 apt install -y shellcheck
 apt install -y htop
@@ -151,28 +151,29 @@ apt install -y samba
 apt install -y openssh-server
 apt install -y net-tools
 apt install -y iperf3
-# apt install -y iptables-persistent
 apt install -y curl
 apt install -y jq
 apt install -y s3cmd
 apt install -y pwgen
 apt install -y apt-transport-https
-snap install -y lxd || apt install -y lxd
+apt install -y vagrant
+apt install -y virtualbox
+snap install lxd || apt install -y lxd
 ### Istall pakages
 
 ### VirtualBox 6.1
-virtualbox(){
-sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list'
-wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
-apt-get update
-apt-get install -y virtualbox-6.1
-}
+# echo "Install VirtualBox"
+# sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" >> /etc/apt/sources.list.d/virtualbox.list'
+# wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+# apt-get update
+# apt-get install -y virtualbox-6.1
 ### VirtualBox 6.1
 
 ### Docker
-apt-get remove -y docker docker-engine docker.io containerd runc
+echo "Install Docker"
+# apt-get remove -y docker docker-engine docker.io containerd runc
 apt-get install -y ca-certificates curl gnupg lsb-release
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --yes -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
       $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update
@@ -180,12 +181,15 @@ apt-get install -y docker-ce docker-ce-cli containerd.io
 ### Docker
 
 ### Vault
+echo "Install Vault"
 curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
 sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
 sudo apt-get update && sudo apt-get install vault
+sudo apt-add-repository -r "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
 ### Vault
 
 ### Kubernetes
+echo "Install Kubernetes"
 curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 \
   && chmod +x minikube
 mkdir -p /usr/local/bin/
@@ -215,27 +219,39 @@ kubectl completion bash >/etc/bash_completion.d/kubectl
 ### Ansible
 
 ### Ansible
-add-apt-repository ppa:ansible/ansible
+echo "Install Ansible"
+add-apt-repository -y ppa:ansible/ansible
 apt update
 apt-get install -y ansible
 apt install -y ansible-lint
 ### Ansible
 
-### Jenkins
-jenkins(){
-apt install -y openjdk-11-jre-headless
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \
-  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
-apt-get update
-apt-get install -y jenkins
-}
-### Jenkins
+### Network settings for netplan
+echo "Configure Netplan"
+cat <<EOF > /etc/netplan/01-network-manager-all.yaml
+# This is the network config written by 'Vitaly Kargin'
+network:
+  version: 2
+  ethernets:
+    ens33:
+      dhcp4: yes
+      dhcp4-overrides:
+        route-metric: 100
+    ens37:
+      dhcp4: no
+      addresses:
+      - 192.168.1.131/24
+      dhcp4-overrides:
+        route-metric: 200
+EOF
+netplan generate
+netplan apply
+### Network settings for netplan
 
 ### Iptables settings
 iptables(){
+echo "Configure Iptables"
+apt install -y iptables-persistent
 interface=`ip -o link | awk -F": " '$2 ~ /^ens|^eth/ {print $2; exit; }'`
 # sysctl -q -w net.ipv4.ip_forward=1 # Enaple NAT
 sed -i 's/#net.ipv4.ip_forward=.*$/net.ipv4.ip_forward=1/' /etc/sysctl.conf
@@ -275,33 +291,23 @@ fi
 }
 # Iptables restore service
 
-### Network settings for netplan
-netplan(){
-cat <<EOF > /etc/netplan/01-network-manager-all.yaml
-# This is the network config written by 'subiquity'
-network:
-  version: 2
-  ethernets:
-    ens33:
-      dhcp4: yes
-      dhcp4-overrides:
-        route-metric: 100
-    ens37:
-      dhcp4: no
-      addresses:
-      - 192.168.1.131/24
-      dhcp4-overrides:
-        route-metric: 200
-EOF
-
-
-netplan generate
-netplan apply
+### Jenkins
+jenkins(){
+echo "Install Jenkins"
+apt install -y openjdk-11-jre-headless
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+apt-get update
+apt-get install -y jenkins
 }
-### Network settings for netplan
+### Jenkins
 
-postgres(){
 ### Postgresql
+postgres(){
+echo "Install Postgresql"
 if ! [[ `apt list --installed | grep postgres` ]]; then
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
@@ -315,25 +321,27 @@ fi
 }
 ### Postgresql
 
-### Mysql
+### MySQL
 mysql(){
+echo "Install MySQL"
 apt install -y mysql-server
 apt install -y mysql-client
-echo "export sqlpass=123" >> /home/vitaly/.bashrc
+echo "export sqlpass=123" >> ~/.bashrc
 echo "[client]
 user=vitaly
 password=123
-" > /home/vitaly/.my.cnf
+" > ~/.my.cnf
 mysql -e "CREATE USER 'vitaly'@'%' IDENTIFIED BY '123';"
 mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'vitaly'@'%';"
 mysql -e "FLUSH PRIVILEGES;"
 sed -i '/^bind-address/s/127.*1/0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
 systemctl restart mysql
-### Mysql
+### MySQL
 }
 
 ### MongoDB
 mongodb(){
+echo "Install MongoDB"
 curl -fsSL https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
 echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
 apt update
@@ -344,16 +352,27 @@ mongo --eval 'db.runCommand({ connectionStatus: 1 })' # Testing mongodb:
 }
 ### MongoDB
 
-## Redis
-redis(){
-apt install -y redis-server 
-sed -i 's/supervised no/supervised systemd/' /etc/redis/redis.conf 
-systemctl restart redis.service
-}
-## Redis
+### MongoDB Shell
+echo "Install MongoDB Shell"
+wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+sudo apt update
+sudo apt-get install -y mongodb-mongosh
+### MongoDB Shell
+
+### Redis
+echo "Install Redis"
+curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor --yes -o /usr/share/keyrings/redis-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+sudo apt-get update
+sudo apt-get install -y redis
+# sed -i 's/supervised no/supervised systemd/' /etc/redis/redis.conf 
+# systemctl restart redis.service
+### Redis
 
 ### Zabbix
 zabbix(){
+echo "Install Zabbix"
 if ! [[ `apt list --installed | grep zabbix` ]]; then
 wget https://repo.zabbix.com/zabbix/5.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.4-1+ubuntu20.04_all.deb
 dpkg -i zabbix-release_5.4-1+ubuntu20.04_all.deb
@@ -393,3 +412,6 @@ fi
 ### Add language
 dpkg-reconfigure locales
 ### Add language
+
+apt-get clean
+apt-get autoremove
