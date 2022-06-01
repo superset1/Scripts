@@ -31,8 +31,8 @@ alias gbr="git branch -r"
 alias gd="git diff"
 alias gc="git add .; git commit"
 alias gca="git add .; git commit --amend"
-alias gc="git checkout"
-alias gcb="git checkout -b"
+alias gch="git checkout"
+alias gchb="git checkout -b"
 alias gcl="git clone"
 alias gi="git init"
 alias gl="git log"
@@ -40,7 +40,7 @@ alias gp="git push"
 alias gpd="git push origin -d"
 alias gpf="git push -f"
 alias gpl="git pull"
-alias gr="git restore"
+alias gr="git restore ."
 alias gs="git status"
 alias gt="git tag"
 alias gta="git tag -a"
@@ -168,7 +168,7 @@ apt install -y jq
 apt install -y s3cmd
 apt install -y pwgen
 apt install -y apt-transport-https
-apt install -y vagrant
+apt install -y vagrant && vagrant autocomplete install --bash --zsh
 apt install -y virtualbox
 snap install lxd || apt install -y lxd
 ### Istall pakages
@@ -212,23 +212,16 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s http
   && chmod +x kubectl
 mv ./kubectl /usr/local/bin/kubectl
 kubectl completion bash >/etc/bash_completion.d/kubectl
+### Kubernetes
 
-### Ansible
-# apt install -y software-properties-common
-# add-apt-repository --yes --update ppa:ansible/ansible
-# apt install -y ansible
-# apt install -y python3-pip
-# apt install -y python-pip # Package manager for Python packages
-# pip install "pywinrm>=0.3.0" # Ansible for Windows
-# pip install virtualenv
-### Ansible
+### Helm
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install -y helm
+### Helm
 
-### Ansible
-# curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-# python3 get-pip.py
-# python3 -m pip install ansible
-# python3 -m pip install paramiko
-### Ansible
 
 ### Ansible
 echo "Install Ansible"
