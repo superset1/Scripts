@@ -23,6 +23,26 @@ export JENKINS_USER_ID=vitaly
 export JENKINS_API_TOKEN=
 # My aliases
 
+# Docker
+alias db="docker build"
+alias dc="docker commit"
+alias dh="docker history"
+alias di="docker images"
+alias dp="docker ps"
+alias dpa="docker ps -a"
+alias de="docker exec -it"
+alias ds="docker search"
+alias dr="docker run"
+alias drd="docker run -d"
+alias dri="docker run -it"
+alias drir="docker run -it --rm"
+alias drm="docker rm"
+alias drma="docker rm $(docker ps -qa)"
+alias drmia="docker rmi $(docker images -qa)"
+alias dv="docker volume"
+alias dV="docker version"
+# Docker
+
 # Git
 alias ga="git add ."
 alias gb="git branch"
@@ -30,12 +50,16 @@ alias gbd="git branch -d"
 alias gbr="git branch -r"
 alias gd="git diff"
 alias gc="git add .; git commit"
+alias gcp="git add .; git commit; git push"
 alias gca="git add .; git commit --amend"
+alias gcap="git add .; git commit --amend; git push -f"
 alias gch="git checkout"
 alias gchb="git checkout -b"
 alias gcl="git clone"
+alias gf="git fetch"
 alias gi="git init"
 alias gl="git log"
+alias gm="git merge"
 alias gp="git push"
 alias gpd="git push origin -d"
 alias gpf="git push -f"
