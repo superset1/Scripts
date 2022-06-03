@@ -24,28 +24,37 @@ export JENKINS_API_TOKEN=
 # My aliases
 
 # Docker
-alias db="docker build"
+alias db="docker build . -t"
 alias dc="docker commit"
+alias de="docker exec -it"
 alias dh="docker history"
 alias di="docker images"
+alias dia="docker images -a"
 alias dp="docker ps"
 alias dpa="docker ps -a"
-alias de="docker exec -it"
-alias ds="docker search"
+alias dP="docker system prune"
 alias dr="docker run"
 alias drd="docker run -d"
 alias dri="docker run -it"
 alias drir="docker run -it --rm"
-alias drm="docker rm"
-alias drma="docker rm $(docker ps -qa)"
-alias drmia="docker rmi $(docker images -qa)"
-alias dv="docker volume"
+alias dR="docker rm"
+alias dRa="docker rm $(docker ps -qa)"
+alias dRaf="docker rm -f $(docker ps -qa)"
+alias dRI="docker rmi"
+alias dRIa="docker rmi $(docker images -qa)"
+alias dRIaf="docker rmi -f $(docker images -qa)"
+alias ds="docker search"
+alias dv="docker volume ls"
+alias dvP="docker volume prune"
+alias dvR="docker volume rm"
+alias dvRf="docker volume rm -f"
 alias dV="docker version"
 # Docker
 
 # Git
 alias ga="git add ."
 alias gb="git branch"
+alias gba="git branch -a"
 alias gbd="git branch -d"
 alias gbr="git branch -r"
 alias gd="git diff"
@@ -55,6 +64,8 @@ alias gca="git add .; git commit --amend"
 alias gcap="git add .; git commit --amend; git push -f"
 alias gch="git checkout"
 alias gchb="git checkout -b"
+# gch(){git checkout $@; git branch}
+# gchb(){git checkout -b $@; git branch}
 alias gcl="git clone"
 alias gf="git fetch"
 alias gi="git init"
@@ -64,7 +75,10 @@ alias gp="git push"
 alias gpd="git push origin -d"
 alias gpf="git push -f"
 alias gpl="git pull"
-alias gr="git restore ."
+alias gr="git remote -v"
+alias gra="git remote add"
+alias grR="git remote remove"
+alias gR="git restore ."
 alias gs="git status"
 alias gt="git tag"
 alias gta="git tag -a"
@@ -124,10 +138,11 @@ EOF
 ### Bashrc
 
 ### SSH Config
-cat <<EOF >> ~/.ssh/config
+[[ $(grep "StrictHostKeyChecking accept-new") ]] || cat <<EOF >> ~/.ssh/config
 StrictHostKeyChecking accept-new
 user root
 EOF
+sed -i 's/.*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/ssh_config
 ### SSH Config
 
 ### Crontab
@@ -297,9 +312,9 @@ service network-manager restart
 ### Iptables settings
 
 # Iptables restore service
-if ! [[ -f /etc/systemd/system/iptables_restore.service ]]; then
-      touch /etc/systemd/system/iptables_restore.service
-      chmod 664 /etc/systemd/system/iptables_restore.service
+[[ -f /etc/systemd/system/iptables_restore.service ]] ||
+      touch /etc/systemd/system/iptables_restore.service &&
+      chmod 664 /etc/systemd/system/iptables_restore.service &&
       cat <<EOF > /etc/systemd/system/iptables_restore.service
 [Unit]
 Description=Iptables restore after reboot
@@ -316,7 +331,6 @@ WantedBy=multi-user.target
 EOF
       systemctl enable iptables_restore.service
       # systemctl start iptables_restore.service
-fi
 }
 # Iptables restore service
 
@@ -337,16 +351,15 @@ apt-get install -y jenkins
 ### Postgresql
 postgres(){
 echo "Install Postgresql"
-if ! [[ `apt list --installed | grep postgres` ]]; then
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-#apt-get update
-apt-get -y install postgresql
-sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf
-sed -i '/host    all.*32/ {s/127.*\/32/0.0.0.0\/0/; s/scr.*256/password/}' /etc/postgresql/*/main/pg_hba.conf
-sudo -u postgres psql -c "create user vitaly with password '123' createdb;"
+[[ `apt list --installed | grep postgres` ]] ||
+sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' &&
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - &&
+#apt-get update &&
+apt-get -y install postgresql &&
+sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf &&
+sed -i '/host    all.*32/ {s/127.*\/32/0.0.0.0\/0/; s/scr.*256/password/}' /etc/postgresql/*/main/pg_hba.conf &&
+sudo -u postgres psql -c "create user vitaly with password '123' createdb;" &&
 systemctl restart postgresql
-fi
 }
 ### Postgresql
 
@@ -402,39 +415,38 @@ sudo apt-get install -y redis
 ### Zabbix
 zabbix(){
 echo "Install Zabbix"
-if ! [[ `apt list --installed | grep zabbix` ]]; then
-wget https://repo.zabbix.com/zabbix/5.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.4-1+ubuntu20.04_all.deb
-dpkg -i zabbix-release_5.4-1+ubuntu20.04_all.deb
-apt update
+[[ `apt list --installed | grep zabbix` ]] ||
+wget https://repo.zabbix.com/zabbix/5.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.4-1+ubuntu20.04_all.deb &&
+dpkg -i zabbix-release_5.4-1+ubuntu20.04_all.deb &&
+apt update &&
 
-apt install -y zabbix-server-pgsql
-apt install -y php7.4-pgsql
-# apt install -y zabbix-server-mysql
-apt install -y zabbix-frontend-php
-# apt install -y zabbix-apache-conf
-apt install -y zabbix-nginx-conf
-apt install -y zabbix-sql-scripts
-apt install -y zabbix-agent
+apt install -y zabbix-server-pgsql &&
+apt install -y php7.4-pgsql &&
+# apt install -y zabbix-server-mysql &&
+apt install -y zabbix-frontend-php &&
+# apt install -y zabbix-apache-conf &&
+apt install -y zabbix-nginx-conf &&
+apt install -y zabbix-sql-scripts &&
+apt install -y zabbix-agent &&
 
-sudo -u postgres createuser --pwprompt zabbix
-sudo -u postgres createdb -O zabbix zabbix
-sudo -u postgres psql -c "ALTER USER zabbix with PASSWORD 'zabbix';"
+sudo -u postgres createuser --pwprompt zabbix &&
+sudo -u postgres createdb -O zabbix zabbix &&
+sudo -u postgres psql -c "ALTER USER zabbix with PASSWORD 'zabbix';" &&
 
-# mysql -uroot -p"root" -e "create database zabbix character set utf8 collate utf8_bin;"
-# mysql -uroot -p"root" -e "create user zabbix@localhost identified by 'zabbix';"
-# mysql -uroot -p"root" -e "grant all privileges on zabbix.* to zabbix@localhost;"
-# mysql -uroot -p"root" -e "FLUSH PRIVILEGES;"
+# mysql -uroot -p"root" -e "create database zabbix character set utf8 collate utf8_bin;" &&
+# mysql -uroot -p"root" -e "create user zabbix@localhost identified by 'zabbix';" &&
+# mysql -uroot -p"root" -e "grant all privileges on zabbix.* to zabbix@localhost;" &&
+# mysql -uroot -p"root" -e "FLUSH PRIVILEGES;" &&
 
-zcat /usr/share/doc/zabbix-sql-scripts/postgresql/create.sql.gz | sudo -u zabbix psql zabbix
+zcat /usr/share/doc/zabbix-sql-scripts/postgresql/create.sql.gz | sudo -u zabbix psql zabbix &&
 
-# zcat /usr/share/doc/zabbix-sql-scripts/mysql/create.sql.gz | mysql -uzabbix -p"zabbix" zabbix
+# zcat /usr/share/doc/zabbix-sql-scripts/mysql/create.sql.gz | mysql -uzabbix -p"zabbix" zabbix &&
 
-sed -i 's/^# DBPassword=.*$/DBPassword=zabbix/' /etc/zabbix/zabbix_server.conf
-sed -i -e 's/^#//g' -e '/listen *80/s/80/8888/' -e 's/example.com/myzabbix/' /etc/zabbix/nginx.conf
+sed -i 's/^# DBPassword=.*$/DBPassword=zabbix/' /etc/zabbix/zabbix_server.conf &&
+sed -i -e 's/^#//g' -e '/listen *80/s/80/8888/' -e 's/example.com/myzabbix/' /etc/zabbix/nginx.conf &&
 
-systemctl restart zabbix-server zabbix-agent nginx php7.4-fpm # apache2
+systemctl restart zabbix-server zabbix-agent nginx php7.4-fpm # apache2 &&
 systemctl enable zabbix-server zabbix-agent nginx php7.4-fpm # apache2
-fi
 }
 ### Zabbix
 
