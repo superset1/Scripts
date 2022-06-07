@@ -11,6 +11,7 @@ alias ap="ansible-playbook"
 alias b="cd ~/Code/Bashscripts"
 alias c="clear"
 alias d="cd ~/Code/Docker"
+# alias h=$(echo "--help")
 alias j="cd ~/Code/Jenkins"
 alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
 alias k="cd ~/Code/Kubernetes"
@@ -19,8 +20,8 @@ alias sn="sudo shutdown now"
 alias sr="sudo shutdown -r now"
 alias rand="openssl rand -base64 32"
 export EDITOR=nano
-export JENKINS_USER_ID=vitaly
-export JENKINS_API_TOKEN=
+export JENKINS_USER_ID="vitaly"
+export JENKINS_API_TOKEN=""
 # My aliases
 
 # Docker
@@ -65,8 +66,8 @@ alias gca="git add .; git commit --amend"
 alias gcap="git add .; git commit --amend; git push -f"
 alias gch="git checkout"
 alias gchb="git checkout -b"
-# gch(){git checkout $@; git branch}
-# gchb(){git checkout -b $@; git branch}
+# gch(){ git checkout $@; git branch ;}
+# gchb(){ git checkout -b $@; git branch ;}
 alias gcl="git clone"
 alias gf="git fetch"
 alias gfa="git fetch --all"
@@ -116,11 +117,12 @@ alias hu="~/WB/Git/kargin.vitaliy/scripts/helm_uninstall.sh"
 
 # WB
 alias wb="cd ~/WB"
-alias wba="cd ~/WB/Ansible"
+alias wba="cd ~/WB/Ansible/products/"
 alias wbr="cd ~/WB/Ansible/roles/"
 alias wbg="cd ~/WB/Git/"
 alias wbk="cd ~/WB/Git/kargin.vitaliy/"
 alias wbs="cd ~/WB/Git/suppliers-portal-ru/"
+vtn() { sed -i "s/^export VAULT_TOKEN.*/export VAULT_TOKEN=\"$1\"/" ~/.bashrc && . ~/.bashrc ;}
 export VAULT_ADDR=""
 export VAULT_TOKEN=""
 export WB_GIT_TOKEN_READ=""
