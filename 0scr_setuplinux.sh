@@ -10,8 +10,6 @@ alias a="cd ~/Code/Ansible"
 alias ap="ansible-playbook"
 alias b="cd ~/Code/Bashscripts"
 alias c="clear"
-alias d="cd ~/Code/Docker"
-# alias h=$(echo "--help")
 alias j="cd ~/Code/Jenkins"
 alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
 alias k="cd ~/Code/Kubernetes"
@@ -25,6 +23,7 @@ export JENKINS_API_TOKEN=""
 # My aliases
 
 # Docker
+alias d="docker"
 alias db="docker build . -t"
 alias dc="docker commit"
 alias de="docker exec -it"
@@ -43,9 +42,10 @@ alias dR="docker rm"
 alias dRa='docker rm $(docker ps -qa)'
 alias dRaf='docker rm -f $(docker ps -qa)'
 alias dRI="docker rmi"
-alias dRIa="docker rmi $(docker images -qa)"
+alias dRIa='docker rmi $(docker images -qa)'
 alias dRIaf='docker rmi -f $(docker images -qa)'
 alias ds="docker search"
+alias dt="docker tag"
 alias dv="docker volume ls"
 alias dvP="docker volume prune"
 alias dvR="docker volume rm"
@@ -76,7 +76,7 @@ alias gl="git log"
 alias gm="git merge"
 alias gp="git push"
 alias gpa="git push --all"
-alias gpd="git push origin -d"
+alias gpD="git push origin -d"
 alias gpf="git push -f"
 alias gpl="git pull"
 alias gpl="git pull --all"
@@ -86,8 +86,8 @@ alias grR="git remote remove"
 alias gR="git restore ."
 alias gs="git status"
 alias gt="git tag"
-alias gta="git tag --all"
-alias gtd="git tag -d"
+alias gta="git tag -a"
+alias gtD="git tag -d"
 alias gtp="git push origin --tags"
 # Git
 
@@ -96,11 +96,15 @@ source <(kubectl completion bash)
 alias k="kubectl"
 alias kcac="~/WB/Git/kargin.vitaliy/scripts/kubernetes_add_context_from_vault.sh"
 alias kcgc="kubectl config get-contexts"
-alias kcuc="kubectl config use-context"
+kcuc() { kubectl config use-context $1; kubectl get pods -o wide ;}
 alias kd="kubectl describe"
-alias kdp="kubectl describe pod/"
+alias kdd="kubectl describe deploy"
+alias kdp="kubectl describe pods"
+alias kdq="kubectl describe quota"
+alias kds="kubectl describe services"
 alias kg="kubectl get"
 alias kgd="kubectl get deploy"
+alias kge="kubectl get events"
 alias kgp="kubectl get pods -o wide"
 alias kgs="kubectl get secret"
 alias kgsv="kubectl get services"
@@ -115,14 +119,21 @@ alias hr="helm rollback"
 alias hu="~/WB/Git/kargin.vitaliy/scripts/helm_uninstall.sh"
 # Helm
 
+# Vault
+alias vkg="vault kv get"
+alias vkw="vault kv write"
+alias vsl="vault secrets list"
+vtn() { sed -i "s/^export VAULT_TOKEN.*/export VAULT_TOKEN=\"$1\"/" ~/.bashrc && . ~/.bashrc ;}
+# Vault
+
 # WB
 alias wb="cd ~/WB"
 alias wba="cd ~/WB/Ansible/products/"
 alias wbr="cd ~/WB/Ansible/roles/"
 alias wbg="cd ~/WB/Git/"
+alias wbi="cd ~/WB/Git/devops/infrastructure/ansible/inventory/projects/portals/"
 alias wbk="cd ~/WB/Git/kargin.vitaliy/"
-alias wbs="cd ~/WB/Git/suppliers-portal-ru/"
-vtn() { sed -i "s/^export VAULT_TOKEN.*/export VAULT_TOKEN=\"$1\"/" ~/.bashrc && . ~/.bashrc ;}
+alias wbks="cd ~/WB/Git/kargin.vitaliy/scripts"
 export VAULT_ADDR=""
 export VAULT_TOKEN=""
 export WB_GIT_TOKEN_READ=""
@@ -189,7 +200,6 @@ gsettings set org.gnome.desktop.screensaver lock-enabled false
 
 ### Istall pakages
 apt update # Update index packages
-# echo "y" | apt upgrade # Update installed packages 
 
 apt install -y python3.9 python-setuptools python3-pip
 pip install --upgrade requests python-gitlab hvac paramiko molecule ansible-core ansible-lint molecule-docker molecule-vagrant
