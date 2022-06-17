@@ -5,6 +5,14 @@ set -euo pipefail
 
 ### Bashrc
 [[ $(grep "My aliases" ~/.bashrc ) ]] || cat <<EOF >> ~/.bashrc
+color_green='\e[32m'
+color_red='\e[31m'
+color_normal='\e[0m'
+
+export EDITOR=nano
+export JENKINS_USER_ID="vitaly"
+export JENKINS_API_TOKEN=""
+
 # My aliases
 alias a="cd ~/Code/Ansible"
 alias ap="ansible-playbook"
@@ -17,9 +25,6 @@ alias s="cd ~/Code/SQL"
 alias sn="sudo shutdown now"
 alias sr="sudo shutdown -r now"
 alias rand="openssl rand -base64 32"
-export EDITOR=nano
-export JENKINS_USER_ID="vitaly"
-export JENKINS_API_TOKEN=""
 # My aliases
 
 # Docker
@@ -39,9 +44,11 @@ alias drd="docker run -d"
 alias dri="docker run -it"
 alias drir="docker run -it --rm"
 alias dR="docker rm"
+alias dRf="docker rm -f"
 alias dRa='docker rm $(docker ps -qa)'
 alias dRaf='docker rm -f $(docker ps -qa)'
 alias dRI="docker rmi"
+alias dRIf="docker rmi -f"
 alias dRIa='docker rmi $(docker images -qa)'
 alias dRIaf='docker rmi -f $(docker images -qa)'
 alias ds="docker search"
@@ -83,7 +90,7 @@ alias gpl="git pull --all"
 alias gr="git remote -v"
 alias gra="git remote add"
 alias grR="git remote remove"
-alias gR="git restore ."
+alias gR="git restore"
 alias gs="git status"
 alias gt="git tag"
 alias gta="git tag -a"
@@ -105,10 +112,16 @@ alias kds="kubectl describe services"
 alias kg="kubectl get"
 alias kgd="kubectl get deploy"
 alias kge="kubectl get events"
+alias kgn="kubectl get namespaces"
 alias kgp="kubectl get pods -o wide"
 alias kgs="kubectl get secret"
 alias kgsv="kubectl get services"
 alias kl="kubectl logs"
+alias kR="kubectl rollout"
+alias kRh="kubectl rollout history deploy"
+alias kRs="kubectl rollout status deploy"
+kRu() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl rollout: Enter deploy and revision!${color_normal}" || kubectl rollout undo deploy $1 --to-revision $2 ;}
+ks() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl scale: Enter namespace and replicas!${color_normal}" || kubectl scale deploy $1 --replicas=$2 ;}
 complete -F __start_kubectl k
 # Kubernetes
 
