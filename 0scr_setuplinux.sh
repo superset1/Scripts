@@ -101,35 +101,68 @@ alias gtp="git push origin --tags"
 # Kubernetes
 source <(kubectl completion bash)
 alias k="kubectl"
+alias kc="kubectl create"
 alias kcac="~/WB/Git/kargin.vitaliy/scripts/kubernetes_add_context_from_vault.sh"
 alias kcgc="kubectl config get-contexts"
 kcuc() { kubectl config use-context $1; kubectl get pods -o wide ;}
 alias kd="kubectl describe"
 alias kdd="kubectl describe deploy"
+alias kde="kubectl describe events"
+alias kdn="kubectl describe nodes"
+alias kdns="kubectl describe namespaces"
 alias kdp="kubectl describe pods"
 alias kdq="kubectl describe quota"
 alias kds="kubectl describe services"
+alias kdv="kubectl describe vpa"
+alias kD="kubectl delete"
+alias kDd="kubectl delete deploy"
+alias kDp="kubectl delete pods"
+alias kDv="kubectl delete vpa"
 alias kg="kubectl get"
 alias kgd="kubectl get deploy"
 alias kge="kubectl get events"
-alias kgn="kubectl get namespaces"
+alias kgn="kubectl get nodes"
+alias kgns="kubectl get namespaces"
 alias kgp="kubectl get pods -o wide"
+alias kgq="kubectl get quota"
 alias kgs="kubectl get secret"
+alias kgv="kubectl get vpa"
 alias kgsv="kubectl get services"
 alias kl="kubectl logs"
-alias kR="kubectl rollout"
-alias kRh="kubectl rollout history deploy"
-alias kRs="kubectl rollout status deploy"
-kRu() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl rollout: Enter deploy and revision!${color_normal}" || kubectl rollout undo deploy $1 --to-revision $2 ;}
+alias kr="kubectl rollout"
+alias krh="kubectl rollout history deploy"
+alias krs="kubectl rollout status deploy"
+krU() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl rollout: Enter deploy and revision!${color_normal}" || kubectl rollout undo deploy $1 --to-revision $2 ;}
 ks() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl scale: Enter namespace and replicas!${color_normal}" || kubectl scale deploy $1 --replicas=$2 ;}
 complete -F __start_kubectl k
 # Kubernetes
 
 # Helm
-alias hl="helm list -a"
+source <(helm completion bash)
+alias h="helm"
+alias hc="helm create"
+alias hg="helm get"
+alias hga="helm get all"
+alias hgm="helm get manifest"
+alias hgv="helm get values"
 alias hh="helm history"
-alias hr="helm rollback"
-alias hu="~/WB/Git/kargin.vitaliy/scripts/helm_uninstall.sh"
+alias hi="helm install"
+alias hl="helm list -a"
+alias hln="helm lint"
+alias hp="helm package"
+hra() { [[ $# -ne 2 ]] && echo -e "${color_red}helm repo add: Enter name and url!${color_normal}" || helm repo add $1 $2 ;}
+alias hrl="helm repo list"
+alias hrR="helm repo remove"
+alias hru="helm repo update"
+alias hR="helm rollback"
+alias hs="helm status"
+alias hsr="helm search repo"
+alias hsh="helm search hub"
+alias hu="helm upgrade"
+alias huR="helm upgrade --reset-values"
+alias hU="helm uninstall --keep-history"
+# alias hU="~/WB/Git/kargin.vitaliy/scripts/helm_uninstall.sh"
+complete -F __start_helm h
 # Helm
 
 # Vault
