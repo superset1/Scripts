@@ -102,6 +102,7 @@ alias gtp="git push origin --tags"
 source <(kubectl completion bash)
 ns() { [[ $# -ne 1 ]] && echo -e "${color_red}Enter namespace only!${color_normal}" || export namespace="-n $1"; . ~/.bashrc ;}
 alias k="kubectl"
+alias ka="kubectl apply ${namespace}"
 alias kc="kubectl create ${namespace}"
 alias kcac="~/WB/Git/kargin.vitaliy/scripts/kubernetes_add_context_from_vault.sh"
 alias kcgc="kubectl config get-contexts"
@@ -121,22 +122,25 @@ alias kDd="kubectl delete deploy ${namespace}"
 alias kDp="kubectl delete pods ${namespace}"
 alias kDv="kubectl delete vpa ${namespace}"
 alias ke="kubectl exec -it ${namespace}"
+alias kex="kubectl explain pods ${namespace}"
 alias kg="kubectl get ${namespace}"
 alias kgd="kubectl get deploy ${namespace}"
 alias kge="kubectl get events ${namespace}"
 alias kgn="kubectl get nodes ${namespace}"
 alias kgns="kubectl get namespaces"
 alias kgp="kubectl get pods -o wide ${namespace}"
+kgpr() { kubectl get pods -o jsonpath-as-json="{range .items[*].spec.containers[${1:-*}]}{.name}{.resources}{end}" ${namespace} ;}
 alias kgq="kubectl get quota ${namespace}"
 alias kgs="kubectl get services ${namespace}"
 alias kgsc="kubectl get secret ${namespace}"
 alias kgv="kubectl get vpa ${namespace}"
 alias kl="kubectl logs ${namespace}"
-alias kr="kubectl rollout ${namespace}"
-alias krh="kubectl rollout history deploy ${namespace}"
-alias krs="kubectl rollout status deploy ${namespace}"
-krU() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl rollout: Enter deploy and revision!${color_normal}" || kubectl rollout undo deploy $1 --to-revision $2 ${namespace} ;}
-ks() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl scale: Enter namespace and replicas!${color_normal}" || kubectl scale deploy $1 --replicas=$2 ${namespace} ;}
+alias kR="kubectl rollout ${namespace}"
+kRhd() { [[ $# -ne 1 ]] && echo -e "${color_red}kubectl rollout history deploy: Enter deploy!${color_normal}" || kubectl rollout history deploy $1 ${namespace} ;}
+kRrd() { [[ $# -ne 1 ]] && echo -e "${color_red}kubectl rollout restart deploy: Enter deploy!${color_normal}" || kubectl rollout restart deploy $1 ${namespace} ;}
+kRsd() { [[ $# -ne 1 ]] && echo -e "${color_red}kubectl rollout status deploy: Enter deploy!${color_normal}" || kubectl rollout status deploy $1 ${namespace} ;}
+kRud() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl rollout undo deploy: Enter deploy and revision!${color_normal}" || kubectl rollout undo deploy $1 --to-revision $2 ${namespace} ;}
+ksd() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl scale deploy: Enter deploy and replicas!${color_normal}" || kubectl scale deploy $1 --replicas=$2 ${namespace} ;}
 complete -F __start_kubectl k
 # Kubernetes
 
