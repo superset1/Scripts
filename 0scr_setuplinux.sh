@@ -123,10 +123,11 @@ alias kad="kubectl apply --dry-run=client ${namespace}"
 alias kc="kubectl create ${namespace}"
 kcac(){ ~/WB/Git/kargin.vitaliy/scripts/kubernetes_add_context_from_vault.sh $@; [ $# -eq 1 ] && ns $(echo $1 | awk -F/ '{print $NF}'); [ $# -gt 1 ] && ns $2 ;}
 alias kcgc="kubectl config get-contexts"
-kcuc() { [[ $# -eq 0 ]] && kubectl config get-contexts && echo -en "\n${color_green}Choose context: ${color_yellow}" && read context_temp && echo -e ${color_normal}; [[ -n $context_temp ]] && kubectl config use-context ${context_temp:-$1} && kubectl get namespaces && echo -en "\n${color_green}Choose namespace: ${color_yellow}" && read namespace_temp && ns ${namespace_temp:-${namespace:3}}; [[ $(grep -v "tele.*wb.ru" <<<${context_temp:-$1}) ]] && export namespace="-n $(echo ${context_temp:-$1} | awk -F. '{print $1}')" && kubectl get pods -o wide ${namespace} || ns; echo -e ${color_normal}; unset context_temp; unset namespace_temp; . ~/.bashrc ;}
+kcuc() { [[ $# -eq 0 ]] && kubectl config get-contexts && echo -en "\n${color_green}Choose context: ${color_yellow}" && read context_temp && echo -e ${color_normal} || context_temp=$1; [[ -n $context_temp ]] && kubectl config use-context ${context_temp:-$1} && kubectl get namespaces && echo -en "\n${color_green}Choose namespace: ${color_yellow}" && read namespace_temp; ns ${namespace_temp:-${namespace:3}}; [[ $(grep -v "tele.*wb.ru" <<<${context_temp:-$1}) ]] && export namespace="-n $(echo ${context_temp:-$1} | awk -F. '{print $1}')" && kubectl get pods -o wide ${namespace}; echo -ne ${color_normal}; unset context_temp; unset namespace_temp; . ~/.bashrc ;}
 alias kd="kubectl describe ${namespace}"
 alias kdd="kubectl describe deploy ${namespace}"
 alias kde="kubectl describe events ${namespace}"
+alias kdi="kubectl describe ingress ${namespace}"
 alias kdn="kubectl describe nodes ${namespace}"
 alias kdns="kubectl describe namespaces ${namespace}"
 alias kdp="kubectl describe pods ${namespace}"
@@ -144,6 +145,7 @@ alias kDsc="kubectl delete secret ${namespace}"
 alias kDv="kubectl delete vpa ${namespace}"
 alias ke="kubectl edit ${namespace}"
 alias ked="kubectl edit deploy ${namespace}"
+alias kei="kubectl edit ingress ${namespace}"
 alias kep="kubectl edit pods ${namespace}"
 alias keq="kubectl edit quota ${namespace}"
 alias ker="kubectl edit role ${namespace}"
@@ -162,9 +164,8 @@ alias kge='kubectl get events --sort-by=".metadata.creationTimestamp" ${namespac
 alias kgev='kubectl get events --sort-by=".metadata.creationTimestamp" ${namespace} --field-selector reason=EvictedByVPA'
 alias kgi="kubectl get ingress ${namespace}"
 alias kgn="kubectl get nodes ${namespace}"
-# kgns() { [[ $# -ge 1 ]] && kubectl get namespaces $@ || ( kubectl get namespaces && echo -en "\n${color_green}Choose namespace: ${color_yellow}" && read namespace_temp && export namespace="$namespace" && unset namespace_temp && echo -en ${color_normal} && . ~/.bashrc) ;}
-# kgns() { if [[ $# -ge 1 ]]; then kubectl get namespaces $@; else kubectl get namespaces; echo -en "\n${color_green}Choose namespace: ${color_yellow}"; read namespace_temp; export namespace="-n $namespace_temp"; unset namespace_temp; echo -en ${color_normal}; . ~/.bashrc; fi ;}
 kgns() { if [[ $# -ge 1 ]]; then kubectl get namespaces $@; else kubectl get namespaces; echo -en "\n${color_green}Choose namespace: ${color_yellow}"; read namespace_temp; ns $namespace_temp; unset namespace_temp; echo -en ${color_normal}; fi ;}
+alias kgo="~/WB/Git/kargin.vitaliy/scripts/kubernetes_get_objects_yaml.sh"
 alias kgp="kubectl get pods -o wide ${namespace}"
 alias kgpc="kubectl get pods -o jsonpath-as-json='{.spec.containers[*].name}{.spec.initContainers[*].name}' ${namespace}"
 alias kgpr="kubectl get pods -o jsonpath-as-json='{range .spec.containers[*]}{.name}{.resources}{end}{range .spec.initContainers[*]}{.name}{.resources}{end}' ${namespace}"
