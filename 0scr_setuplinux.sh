@@ -5,6 +5,7 @@ set -euo pipefail
 
 ### Bashrc
 [[ $(grep "My aliases" ~/.bashrc ) ]] || cat <<EOF >> ~/.bashrc
+
 # My aliases
 color_green='\e[32m'
 color_red='\e[31m'
@@ -15,20 +16,28 @@ color_normal='\e[0m'
 export EDITOR=nano
 export JENKINS_USER_ID="vitaly"
 export JENKINS_API_TOKEN=""
+export AWS_ACCESS_KEY_ID=""
+export AWS_SECRET_ACCESS_KEY=""
+export AWS_DEFAULT_REGION=""
 
 alias a="cd ~/Code/Ansible"
 alias ap="ansible-playbook"
 alias b="cd ~/Code/Bashscripts"
 alias c="clear"
+alias cp="cp -r"
 alias j="cd ~/Code/Jenkins"
 alias jj="java -jar jenkins-cli.jar -s http://localhost:8080/"
 alias k="cd ~/Code/Kubernetes"
 tshl() { tsh login --proxy=${1}:443 --auth=local --user=superset ${1} ;}
+pingw(){ for ping_server in ${@}; do while ! ping -c 1 $ping_server &> /dev/null; do sleep 1; done; echo -e "${color_magenta}$ping_server ${color_green}is reachable.${color_normal}"; done ;}
 alias s="cd ~/Code/SQL"
-be() { echo -n "$1" | base64 ;}
-bd() { [[ ${1::1} == '{' ]] && python3 ~/WB/Git/kargin.vitaliy/scripts/base64_decode.py "$1" || python3 ~/WB/Git/kargin.vitaliy/scripts/base64_decode.py ${namespace} $1 ;}
+be() { [[ $1 == '-f' ]] && echo -n "$(cat $2)" | base64 -w 0 || echo -n "$1" | base64 -w 0; echo ;}
+bek() { python3 ~/WB/Git/kargin.vitaliy/scripts/base64_decode.py -e "${@:2}" ;}
+bd() { echo -n "$1" | base64 -d; echo ;}
+bdk() { [[ ${1::1} == '{' ]] && python3 ~/WB/Git/kargin.vitaliy/scripts/base64_decode.py "$1" || python3 ~/WB/Git/kargin.vitaliy/scripts/base64_decode.py ${namespace} $1 ;}
 alias sn="sudo shutdown now"
 alias sr="sudo shutdown -r now"
+alias sshadd='cat /root/.ssh/id_ed25519.pub | ansible all -i hosts -m lineinfile -a "path=/root/.ssh/authorized_keys line=\"$(cat -)\" state=present" -e ansible_user=admin --become'
 alias rand="openssl rand -base64 32"
 # My aliases
 
@@ -103,28 +112,33 @@ alias gr="git remote -v"
 alias gra="git remote add"
 alias grR="git remote remove"
 alias gR="git restore"
-alias gRh="git reset --hard"
-alias gRs="git reset --soft"
+alias gRH="git reset --hard"
+alias gRs="git restore --staged"
+alias gRS="git reset --soft"
 alias gs="git status"
 alias gsh="git show"
 alias gt="git tag"
 alias gta="git tag -a"
-gtap() { if [[ $# -ge 1 ]]; then ([[ $# -eq 1 ]] && git tag -a $1; [[ $# -eq 2 ]] && git tag -m "$1" -a $2) && git push origin --tags; else echo -e "${color_red}Enter tag name [and message]: ${color_yellow}git tag [-m \$1] -a \$2${color_normal}"; fi ;}
+gtap() { if [[ $# -ge 1 ]]; then ([[ $# -eq 1 ]] && git tag -a $1; [[ $# -eq 2 ]] && git tag -m "$1" -a $2); git push origin --tags; else echo -e "${color_red}Enter tag name [and message]: ${color_yellow}git tag [-m \$1] -a \$2${color_normal}"; fi ;}
 alias gtD="git tag -d"
 alias gtp="git push origin --tags"
 # Git
 
 # Kubernetes
 source <(kubectl completion bash)
-ns() { if [[ $# -eq 1 ]]; then export namespace="-n $1"; echo -e ${color_normal}; kubectl get pods -o wide ${namespace}; fi; [[ $# -le 1 ]] && . ~/.bashrc && echo -e "${color_green}\nYour current context: ${color_magenta}$(kubectl config current-context)${color_normal}\n${color_green}\nYour current namespace: ${color_yellow}${namespace:3}${color_normal}\n" || echo -e "${color_red}Enter namespace only!${color_normal}" ;}
+ns() { if [[ $# -eq 1 ]]; then export namespace="-n $1"; echo -e ${color_normal}; kubectl get pods ${namespace}; fi; [[ $# -le 1 ]] && . ~/.bashrc && echo -e "${color_green}\nYour current context: ${color_magenta}$(kubectl config current-context)${color_normal}\n${color_green}\nYour current namespace: ${color_yellow}${namespace:3}${color_normal}\n" || echo -e "${color_red}Enter namespace only!${color_normal}" ;}
 alias k="kubectl ${namespace}"
 alias ka="kubectl apply ${namespace}"
 alias kad="kubectl apply --dry-run=client ${namespace}"
 alias kc="kubectl create ${namespace}"
-kcac(){ ~/WB/Git/kargin.vitaliy/scripts/kubernetes_add_context_from_vault.sh $@; [ $# -eq 1 ] && ns $(echo $1 | awk -F/ '{print $NF}'); [ $# -gt 1 ] && ns $2 ;}
+kcac(){ bash ~/WB/Git/kargin.vitaliy/scripts/kubernetes_add_context_from_vault.sh "$@"; [ $# -eq 1 ] && [ $1 != '-h' ]&& ns $(echo $1 | awk -F/ '{print $NF}'); [ $1 == '-j' ] && ns $(echo $2 | jq -r '.namespace'); [ $# -eq 4 ] && ns $2 ;}
 alias kcgc="kubectl config get-contexts"
-kcuc() { [[ $# -eq 0 ]] && kubectl config get-contexts && echo -en "\n${color_green}Choose context: ${color_yellow}" && read context_temp && echo -e ${color_normal} || context_temp=$1; [[ -n $context_temp ]] && kubectl config use-context ${context_temp:-$1} && kubectl get namespaces && echo -en "\n${color_green}Choose namespace: ${color_yellow}" && read namespace_temp; ns ${namespace_temp:-${namespace:3}}; [[ $(grep -v "tele.*wb.ru" <<<${context_temp:-$1}) ]] && export namespace="-n $(echo ${context_temp:-$1} | awk -F. '{print $1}')" && kubectl get pods -o wide ${namespace}; echo -ne ${color_normal}; unset context_temp; unset namespace_temp; . ~/.bashrc ;}
+kcuc() { [[ $# -eq 0 ]] && kubectl config get-contexts && echo -en "\n${color_green}Choose context: ${color_yellow}" && read context_temp && echo -e ${color_normal} || context_temp=$1; [[ -n $context_temp ]] && kubectl config use-context ${context_temp:-$1} && kubectl get namespaces && echo -en "\n${color_green}Choose namespace: ${color_yellow}" && read namespace_temp; ns ${namespace_temp:-${namespace:3}}; [[ $(grep -v "tele.*wb.ru" <<<${context_temp:-$1}) ]] && export namespace="-n $(echo ${context_temp:-$1} | awk -F. '{print $1}')" && kubectl get pods ${namespace}; echo -ne ${color_normal}; unset context_temp; unset namespace_temp; . ~/.bashrc ;}
+alias kcucl="kcuc tele.dl.wb.ru-k8s.portal-dl"
+alias kcucp="kcuc tele.dp.wb.ru-k8s.portal-dp"
+alias kcucs="kcuc tele.dp.wb.ru-k8s.stage-dp"
 alias kd="kubectl describe ${namespace}"
+alias kdcm="kubectl describe cm ${namespace}"
 alias kdd="kubectl describe deploy ${namespace}"
 alias kde="kubectl describe events ${namespace}"
 alias kdi="kubectl describe ingress ${namespace}"
@@ -144,18 +158,22 @@ alias kDs="kubectl delete services ${namespace}"
 alias kDsc="kubectl delete secret ${namespace}"
 alias kDv="kubectl delete vpa ${namespace}"
 alias ke="kubectl edit ${namespace}"
+alias kecm="kubectl edit cm ${namespace}"
 alias ked="kubectl edit deploy ${namespace}"
 alias kei="kubectl edit ingress ${namespace}"
 alias kep="kubectl edit pods ${namespace}"
 alias keq="kubectl edit quota ${namespace}"
 alias ker="kubectl edit role ${namespace}"
 alias kers="kubectl edit rs ${namespace}"
+alias kes="kubectl edit services ${namespace}"
 alias kesc="kubectl edit secret ${namespace}"
 alias kev="kubectl edit vpa ${namespace}"
 alias kex="kubectl exec -it ${namespace}"
 alias kexp="kubectl explain pods ${namespace}"
 alias kg="kubectl get ${namespace}"
+alias kgcm="kubectl get cm ${namespace}"
 alias kgd="kubectl get deploy ${namespace}"
+alias kgdn="kubectl get deploy --no-headers -o custom-columns=':metadata.name' ${namespace}"
 alias kgdc="kubectl get deploy -o jsonpath-as-json='{.spec.template.spec.containers[*].name}{.spec.template.spec.initContainers[*].name}' ${namespace}"
 alias kgdr="kubectl get deploy -o jsonpath-as-json='{range .spec.template.spec.containers[*]}{.name}{.resources}{end}{range .spec.template.spec.initContainers[*]}{.name}{.resources}{end}' ${namespace}"
 alias kgdra="kubectl get deploy -o jsonpath-as-json='{range .items[*].spec.template.spec}{range .containers[*]}{.name}{.resources}{end}{range .initContainers[*]}{.name}{.resources}{end}' ${namespace}"
@@ -165,8 +183,9 @@ alias kgev='kubectl get events --sort-by=".metadata.creationTimestamp" ${namespa
 alias kgi="kubectl get ingress ${namespace}"
 alias kgn="kubectl get nodes ${namespace}"
 kgns() { if [[ $# -ge 1 ]]; then kubectl get namespaces $@; else kubectl get namespaces; echo -en "\n${color_green}Choose namespace: ${color_yellow}"; read namespace_temp; ns $namespace_temp; unset namespace_temp; echo -en ${color_normal}; fi ;}
-alias kgo="~/WB/Git/kargin.vitaliy/scripts/kubernetes_get_objects_yaml.sh"
-alias kgp="kubectl get pods -o wide ${namespace}"
+alias kgo="bash ~/WB/Git/kargin.vitaliy/scripts/kubernetes_get_objects_yaml.sh"
+alias kgp="kubectl get pods ${namespace}"
+alias kgpo="kubectl get pods -o wide ${namespace}"
 alias kgpc="kubectl get pods -o jsonpath-as-json='{.spec.containers[*].name}{.spec.initContainers[*].name}' ${namespace}"
 alias kgpr="kubectl get pods -o jsonpath-as-json='{range .spec.containers[*]}{.name}{.resources}{end}{range .spec.initContainers[*]}{.name}{.resources}{end}' ${namespace}"
 alias kgq="kubectl get quota ${namespace}"
@@ -187,6 +206,7 @@ alias kRRd="kubectl rollout restart deploy ${namespace}"
 alias kRsd="kubectl rollout status deploy ${namespace}"
 kRUd() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl rollout undo deploy: Enter deploy and revision!${color_normal}" || kubectl rollout undo deploy $1 --to-revision $2 ${namespace} ;}
 kSd() { [[ $# -ne 2 ]] && echo -e "${color_red}kubectl scale deploy: Enter deploy and replicas!${color_normal}" || kubectl scale deploy $1 --replicas=$2 ${namespace} ;}
+kSda() { [[ $# -ne 1 ]] && echo -e "${color_red}kubectl scale deploy: Enter number of replicas!${color_normal}" || for deploy_full_name in $(kubectl get deploy -o name ${namespace}); do kubectl scale $deploy_full_name --replicas=$1 ${namespace}; done ;}
 alias ktn="kubectl top nodes ${namespace}"
 alias ktp="kubectl top pod ${namespace}"
 complete -F __start_kubectl k
@@ -218,7 +238,7 @@ alias hu="helm upgrade ${namespace}"
 alias huR="helm upgrade --reset-values ${namespace}"
 alias hU="helm uninstall --keep-history ${namespace}"
 alias hU!="helm uninstall ${namespace}"
-# alias hU="~/WB/Git/kargin.vitaliy/scripts/helm_uninstall.sh"
+# alias hU="bash ~/WB/Git/kargin.vitaliy/scripts/helm_uninstall.sh"
 complete -F __start_helm h
 # Helm
 
@@ -243,6 +263,7 @@ export VAULT_ADDR="https://vault.wildberries.ru:8200"
 export VAULT_TOKEN=""
 export WB_GIT_TOKEN_READ=""
 export WB_GITLAB_TOKEN_READ=""
+export WB_GITLAB_SESSION=""
 # WB
 
 # History
